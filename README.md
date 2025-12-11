@@ -16,6 +16,36 @@ Key constraints and choices made per user request:
 
 * Code is modular; examples for image + video processing included.
 
+---
+
+## Goals
+
+1. Use Gemini (LLM) for natural-language understanding, planning, and tool orchestration.
+2. Use a SAM agent (Hugging Face Inference API hosting of Segment Anything family) for segmentation and visual grounding.
+3. Implement a minimal agent loop: LLM receives user prompt -> decides whether to call SAM -> sends instruction (image URL + prompt/point/box) -> SAM returns mask(s), bbox/shape metadata -> LLM composes final answer.
+4. Provide clear Python example code, documentation, and tests so you can run on free-tier accounts.
+
+---
+
+## Repo layout (single-file example plus extras)
+
+```
+agentic-ai-sam-gemini/
+├─ README.md                # this document
+├─ requirements.txt
+├─ .env.example             # env var names/format
+├─ app/
+│  ├─ agent_llm.py          # LLM orchestration logic (Gemini client wrapper)
+│  ├─ sam_agent.py          # SAM wrapper (Hugging Face Inference API client)
+│  ├─ utils.py              # helpers (image download, mask -> bbox conversion)
+│  └─ run_example.py        # example end-to-end flow
+├─ tests/
+│  └─ test_end_to_end.py    # simple smoke test with public image
+└─ LICENSE
+```
+
+---
+
 ## Environment
 
 Set these environment variables before running:
@@ -30,29 +60,90 @@ Set these environment variables before running:
 
 Optionally: DOC_TEXT_LIMIT — max number of characters from uploaded/attached text to include in LLM prompt (default 2000).
 
-## Files (implemented in repository)
+## Quick setup
 
-requirements.txt
+1. Create accounts and tokens (free tiers available):
+   - Hugging Face account -> `HF_API_KEY` (use Inference API). You can host a SAM model or use the HF hosted model (e.g. `facebook/sam-vit-huge` or `facebook/sam2.1-hiera-large`).
+   - Google Cloud / Vertex AI -> `GEMINI_API_KEY` (Gemini). The free quotas vary by region; use your developer project. Alternatively you can use `google-generativeai` library with an API key.
 
-config.py
+2. Copy `.env.example` to `.env` and set the two environment variables.
 
-agents/llm_agent.py
+3. Install dependencies:
 
-agents/sam_agent.py
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-utils/image_utils.py
+4. Run the example:
 
-main.py
+```bash
+python app/run_example.py --image https://example.com/myphoto.jpg --question "Find the red bicycle in the image and give its bounding box"
+```
 
-README.md
+---
 
-## Implementation notes
+## Design and architecture
 
-All HTTP calls use REST to Gemini/Hugging Face; no managed SDKs required except google-generativeai for convenience.
+### Agents
 
-The LLM parsing step returns strict JSON; a fallback heuristic exists if parsing fails.
+**LLM agent (agent_llm.py)**
+- Receives user prompt (text + optional image URL).
+- Performs intent classification: determine whether segmentation/vision tool is needed.
+- If tool required, prepares a structured call (tool name `sam.segment`, arguments: `image_url`, `prompt_type`, `points` or `box` or `text_prompt`).
+- Sends the tool call to the SAM agent and awaits its response.
+- Integrates SAM response (masks, bboxes, confidence) into final textual output.
 
-The SAM agent expects the HF inference response to return a per-instance mask or COCO-style polygons; small adapters convert HF output into binary masks for contour extraction.
+**SAM agent (sam_agent.py)**
+- Uses Hugging Face Inference API endpoints to call a Segment Anything model.
+- Accepts image URL and structured prompts (points, boxes, or text label).
+- Returns mask(s) as PNG (or RLE), polygon coordinates, bounding boxes, and a small visualization image (mask overlay).
 
-Keep requests small to respect free-tier usage; batch frames when processing video and respect frame sampling.
+### Communication format
 
+Tool call (from LLM to SAM):
+```json
+{
+  "tool": "sam.segment",
+  "args": {
+    "image_url": "https://...",
+    "prompt_type": "box",        
+    "prompt": ["x1","y1","x2","y2"] 
+  }
+}
+```
+
+SAM response (to LLM):
+```json
+{
+  "masks": ["base64_png_1"],
+  "polygons": [["x","y"],"..."],
+  "bboxes": [["x1","y1","x2","y2"], "..."],
+  "scores": [0.98, "..."]
+}
+```
+
+---
+
+## Example code (key files)
+
+### `requirements.txt`
+
+```
+requests
+python-dotenv
+Pillow
+numpy
+opencv-python
+google-generativeai>=0.2.0
+```
+
+### `.env.example`
+
+```
+HF_API_KEY=hf_...
+GEMINI_API_KEY=...
+HF_SAM_MODEL=facebook/sam-vit-huge
+GEMINI_MODEL=gemini-1.5-pro
+```
