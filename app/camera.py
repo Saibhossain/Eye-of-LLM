@@ -14,4 +14,3 @@ def capture_image():
 
     return frame
 
-capture_image()
