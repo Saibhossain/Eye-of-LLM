@@ -1,53 +1,78 @@
 import os
-from pathlib import Path
-from dotenv import load_dotenv
 import google.generativeai as genai
-import cv2
-import PIL.Image
+from dotenv import load_dotenv
+from collections import Counter
 
-current_dir = Path(__file__).resolve().parent
-env_path = current_dir.parent / '.env.example'
-load_result = load_dotenv(dotenv_path=env_path)
 
-print(f"Loading .env from: {env_path}")
-print(f"Did it load? {load_result}")
+load_dotenv()
 
 
 class LLMAgent:
     def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
+        # 1. Setup Gemini
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not found in .env file")
+            raise ValueError("❌ API Key missing! Check your .env file.")
 
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')  # Flash is faster for real-time
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
-    def analyze_image(self, image_array, prompt="What is this object?"):
-        rgb_image = cv2.cvtColor(image_array, cv2.COLOR_BGR2RGB)
-        pil_image = PIL.Image.fromarray(rgb_image)
+        # System instruction to give the LLM a personality
+        self.system_prompt = (
+            "You are a helpful AI assistant with vision capabilities. "
+            "You cannot see the image directly, but you receive a list of objects "
+            "detected by a YOLO computer vision model. "
+            "Describe what is happening based on these objects. Be concise and natural."
+        )
+
+    def process_detections(self, detections, user_question="Describe what you see."):
+        """
+        Takes the raw YOLO output list and sends a summary to Gemini.
+        """
+        if not detections:
+            return "I don't see any recognizable objects right now."
+
+        # 2. Summarize the data (Turn JSON into English)
+        # Extract just the class names (e.g., ['person', 'person', 'bowl'])
+        object_names = [obj['class_name'] for obj in detections]
+
+        # Count them (e.g., {'person': 2, 'bowl': 1})
+        counts = Counter(object_names)
+
+        # Create a readable string (e.g., "2 persons, 1 bowl")
+        summary_list = []
+        for name, count in counts.items():
+            s = "s" if count > 1 else ""  # Handle plural
+            summary_list.append(f"{count} {name}{s}")
+
+        scene_description = ", ".join(summary_list)
+
+        # 3. Construct the Prompt
+        full_prompt = (
+            f"{self.system_prompt}\n\n"
+            f"DETECTED OBJECTS: {scene_description}\n"
+            f"USER QUESTION: {user_question}\n"
+        )
 
         try:
-            response = self.model.generate_content([prompt, pil_image])
-            return response.text
+            # 4. Ask Gemini
+            response = self.model.generate_content(full_prompt)
+            return response.text.strip()
         except Exception as e:
-            return f"Error connecting to Gemini: {e}"
+            return f"Error talking to Gemini: {e}"
 
 
-# --- DEBUG/TEST BLOCK ---
+# --- TEST BLOCK (Run this file to test independently) ---
 if __name__ == "__main__":
-    import numpy as np
+    # Simulate the input you provided
+    dummy_data = [
+        {'bbox': [745, 153, 1274, 711], 'confidence': 0.91, 'class_name': 'person'},
+        {'bbox': [154, 236, 951, 717], 'confidence': 0.84, 'class_name': 'person'},
+        {'bbox': [0, 683, 52, 719], 'confidence': 0.30, 'class_name': 'bowl'}
+    ]
 
-    print("Testing LLM Agent...")
-    try:
-        agent = LLMAgent()
-        print("LLM Agent initialized. Sending test image...")
+    agent = LLMAgent()
 
-        # Create a dummy blank white image (100x100 pixels)
-        dummy_image = np.ones((100, 100, 3), dtype=np.uint8) * 255
-
-        # Ask a simple question
-        response = agent.analyze_image(dummy_image, prompt="What color is this image? Reply with one word.")
-        print(f"GEMINI RESPONSE: {response}")
-        print("Test Passed!")
-    except Exception as e:
-        print(f"\nTest Failed. Check your API Key in .env.\nError: {e}")
+    print("🧠 Thinking...")
+    response = agent.process_detections(dummy_data)
+    print(f"\n🤖 Agent Says: {response}")
