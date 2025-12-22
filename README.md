@@ -1,6 +1,25 @@
 # 👁️ Eye of LLM
 An AI Assistant with Vision Capabilities. Powered by YOLO11 (Vision), Gemini 2.5 Flash (Reasoning), and Python.
 
+## How the full system works
+           You ask a question
+                   ↓
+           Camera takes photo
+                   ↓
+      YOLO detects objects (hand,phone,etc)
+                   ↓
+         Objects converted to text:
+            - "2 persons"
+            - "1 laptop"
+                   ↓
+         Gemini receives:
+            - detected objects
+            - your question
+                   ↓
+        Gemini answers USING VISION
+
+
+
 ## 📖 Overview
 Eye of LLM bridges the gap between Computer Vision and Large Language Models. It allows an AI agent to "see" the real world through your webcam.
 
@@ -88,29 +107,41 @@ Controls
 
 
 
-
-
-Tool call (from LLM to SAM):
+## 📊 Data Flow & JSON Structure
+Understanding how the "Eyes" talk to the "Brain" is key to customizing this project.
+1. Visual Agent Output
 ```json
-{
-  "tool": "sam.segment",
-  "args": {
-    "image_url": "https://...",
-    "prompt_type": "box",        
-    "prompt": ["x1","y1","x2","y2"] 
+[
+  {
+    "object": "person",
+    "accuracy": 0.88,
+    "bbox": [100, 50, 200, 300]
+  },
+  {
+    "object": "laptop",
+    "accuracy": 0.92,
+    "bbox": [150, 300, 400, 500]
+  },
+  {
+    "object": "coffee cup",
+    "accuracy": 0.75,
+    "bbox": [410, 320, 450, 380]
   }
-}
+]
 ```
+2. LLM Processing
 
-SAM response (to LLM):
+The LLMAgent receives this list and summarizes it into natural language context for the AI prompt:
+
+Raw Input: 
 ```json
-{
-  "masks": ["base64_png_1"],
-  "polygons": [["x","y"],"..."],
-  "bboxes": [["x1","y1","x2","y2"], "..."],
-  "scores": [0.98, "..."]
-}
+[{'object': 'person'}, {'object': 'person'}, {'object': 'cup'}]
 ```
+Summarized Context: "2 persons, 1 cup"
+
+Final Prompt to Gemini:
+
+"RAW DATA: 2 persons, 1 cup. MY QUESTION: What do you see?"
 
 ---
 
@@ -119,19 +150,18 @@ SAM response (to LLM):
 ### `requirements.txt`
 
 ```
-requests
-python-dotenv
-Pillow
-numpy
-opencv-python
-google-generativeai>=0.2.0
-```
-
-### `.env.example`
+requests==2.32.5
+python-dotenv==1.2.1
+Pillow==12.0.0
+numpy==2.2.6
+opencv-python==4.12.0.88
+matplotlib==3.10.8
+ultralytics==8.3.241
 
 ```
-HF_API_KEY=hf_...
+
+### `.env`
+
+```
 GEMINI_API_KEY=...
-HF_SAM_MODEL=facebook/sam-vit-huge
-GEMINI_MODEL=gemini-1.5-pro
 ```
