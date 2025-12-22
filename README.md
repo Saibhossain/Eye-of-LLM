@@ -1,5 +1,6 @@
 # 👁️ Eye of LLM
 An AI Assistant with Vision Capabilities. Powered by YOLO11 (Vision), Gemini 2.5 Flash (Reasoning), and Python.
+![Eye of LLM Demo Screenshot](overview_of_project.png)
 
 ## How the full system works
            You ask a question
@@ -18,6 +19,14 @@ An AI Assistant with Vision Capabilities. Powered by YOLO11 (Vision), Gemini 2.5
                    ↓
         Gemini answers USING VISION
 
+## Example real output
+
+      🧑 You: What is in my hand?
+      
+      🤖 Agent:
+      Sir, it looks like you’re holding a sleek rectangular object—
+      most likely a smartphone. Judging by your confident grip,
+      I’d say you’re ready to scroll, not throw it.
 
 
 ## 📖 Overview
