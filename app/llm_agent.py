@@ -13,7 +13,7 @@ class LLMAgent:
         # 1. Setup Client (New Syntax)
         api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
         if not api_key:
-            raise ValueError("❌ API Key missing! Check your .env file.")
+            raise ValueError("API Key missing! Check your .env file.")
 
         # The new library uses a 'Client' object
         self.client = genai.Client(api_key=api_key)
