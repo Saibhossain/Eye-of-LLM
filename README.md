@@ -175,3 +175,9 @@ ultralytics==8.3.241
 ```
 GEMINI_API_KEY=...
 ```
+## 📜 License
+This project is open-source and available under the MIT License.
+
+## 🌟 Show your support
+
+If you like this project, please give it a ⭐ on GitHub!
