@@ -7,7 +7,7 @@ import PIL.Image
 
 current_dir = Path(__file__).resolve().parent
 env_path = current_dir.parent / '.env.example'
-load_result = load_dotenv(dotenv_path=".env.example")
+load_result = load_dotenv(dotenv_path=env_path)
 
 print(f"Loading .env from: {env_path}")
 print(f"Did it load? {load_result}")
