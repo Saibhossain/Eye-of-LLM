@@ -1,16 +1,21 @@
 import cv2
 
-def capture_image():
-    cap = cv2.VideoCapture(0)
+class Camera:
+    def __init__(self, camera_index=0):
+        self.cap = cv2.VideoCapture(camera_index)
+        if not self.cap.isOpened():
+            raise ValueError("Could not open webcam. Check macOS permissions for Terminal/PyCharm.")
 
-    if not cap.isOpened():
-        raise RuntimeError("Cannot access camera")
+    def get_frame(self):
+        ret, frame = self.cap.read()
+        if not ret:
+            return None
+        return frame
 
-    ret, frame = cap.read()
-    cap.release()
+    def get_center_coordinates(self, frame):
+        """Returns the (x, y) tuple of the center of the frame."""
+        h, w, _ = frame.shape
+        return w // 2, h // 2
 
-    if not ret:
-        raise RuntimeError("Failed to capture image")
-
-    return frame
-
+    def release(self):
+        self.cap.release()
