@@ -59,17 +59,17 @@ class LLMAgent:
             return f"Error talking to Gemini: {e}"
 
 
-# --- TEST BLOCK ---
-if __name__ == "__main__":
-    agent = LLMAgent()
-
-    # Dummy data for testing
-    dummy_data = [
-        {'class_name': 'person'},
-        {'class_name': 'person'},
-        {'class_name': 'laptop'}
-    ]
-
-    print(f"🧠 Testing new library with model: {agent.model_name}...")
-    response = agent.process_detections(dummy_data)
-    print(f"\n🤖 Agent Says: {response}")
+# # --- TEST BLOCK ---
+# if __name__ == "__main__":
+#     agent = LLMAgent()
+#
+#     # Dummy data for testing
+#     dummy_data = [
+#         {'class_name': 'person'},
+#         {'class_name': 'person'},
+#         {'class_name': 'laptop'}
+#     ]
+#
+#     print(f"Testing new library with model: {agent.model_name}...")
+#     response = agent.process_detections(dummy_data)
+#     print(f"\nAgent Says: {response}")

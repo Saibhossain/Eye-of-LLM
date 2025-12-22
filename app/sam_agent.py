@@ -26,9 +26,9 @@ def detect_objects(frame):
 
     return objects
 
-if __name__ == "__main__":
-    frame = capture_image()
-    output = detect_objects(frame)
-    print("Detected objects:")
-    for obj in output:
-        print(obj)
+# if __name__ == "__main__":
+#     frame = capture_image()
+#     output = detect_objects(frame)
+#     print("Detected objects:")
+#     for obj in output:
+#         print(obj)
