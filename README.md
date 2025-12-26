@@ -7,7 +7,7 @@ An AI Assistant with Vision Capabilities. Powered by YOLO11 (Vision), Gemini 2.5
                    ↓
            Camera takes photo
                    ↓
-      YOLO detects objects (hand,phone,etc)
+    YOLO detects objects (hand,phone,etc)
                    ↓
          Objects converted to text:
             - "2 persons"
